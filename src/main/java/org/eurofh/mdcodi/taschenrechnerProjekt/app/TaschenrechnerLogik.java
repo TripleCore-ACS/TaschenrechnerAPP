@@ -14,14 +14,23 @@ public class TaschenrechnerLogik {
     private BigDecimal vorherigerWert = BigDecimal.ZERO;
     private BigDecimal memory = BigDecimal.ZERO;
     private BigDecimal letzterOperand = BigDecimal.ZERO;
+    private BigDecimal letzteAntwort = BigDecimal.ZERO;
 
     // Speichert den aktuellen Operator und Statusinformationen.
-    private String operator = "";  // String statt char
+    private String operator = "";
     private boolean neueEingabe = true; // True, wenn der Benutzer eine neue Zahl eingibt.
     private boolean fehlerZustand = false; // True, wenn ein Fehler aufgetreten ist.
     private boolean kommaGesetzt = false; // True, wenn ein Dezimalpunkt eingegeben wurde.
+    private boolean winkelModus = true;
     private static final int DEZIMALSTELLEN = 10; // Maximale Dezimalstellen.
     private String aktuellerFehler = ""; // Beschreibung des aktuellen Fehlers.
+    private java.util.Stack<BigDecimal> werteStack = new java.util.Stack<>();
+    private java.util.Stack<String> operatorStack = new java.util.Stack<>();
+    private int klammerEbene = 0;
+
+    // Wichtige mathematische Konstanten.
+    public static final BigDecimal PI = BigDecimal.valueOf(Math.PI);
+    public static final BigDecimal E = BigDecimal.valueOf(Math.E);
 
     // Fehlerbehandlung: Setzt den Rechner in einen Fehlerzustand.
     public void fehlerBehandlung(String fehlerNachricht) {
@@ -74,6 +83,58 @@ public class TaschenrechnerLogik {
                 neueEingabe = false;
             }
         }
+    }
+
+    public void klammerAuf() {
+        if (fehlerZustand) return;
+
+        // Speichere aktuellen Zustand auf Stack
+        werteStack.push(aktuellerWert);
+        operatorStack.push(operator);
+
+        // Neue KlammerEbene beginnen
+        klammerEbene++;
+        aktuellerWert = BigDecimal.ZERO;
+        operator = "";
+        neueEingabe = true;
+        kommaGesetzt = false;
+    }
+
+    public void klammerZu() {
+        if (fehlerZustand) return;
+
+        if (klammerEbene <= 0) {
+            return;
+        }
+
+        // Berechne aktuellen Ausdruck in der Klammer
+        if (!operator.isEmpty() && !neueEingabe) {
+            berechnen();
+        }
+
+        // Hole vorherigen Zustand aus Stack
+        BigDecimal klammerErgebnis = aktuellerWert;
+        aktuellerWert = werteStack.pop();
+        operator = operatorStack.pop();
+        klammerEbene--;
+
+        // Verwende KlammerErgebnis für weitere Berechnungen
+        if (!operator.isEmpty()) {
+            vorherigerWert = aktuellerWert;
+            aktuellerWert = klammerErgebnis;
+            berechnen();
+        } else {
+            aktuellerWert = klammerErgebnis;
+        }
+
+        neueEingabe = true;
+        kommaGesetzt = false;
+    }
+
+
+    // Für später behalten(!)
+    public int getKlammerEbene() {
+        return klammerEbene;
     }
 
     // Verarbeitung der Eingabe eines Operators.
@@ -135,12 +196,240 @@ public class TaschenrechnerLogik {
 
     // Berechnung der Quadratwurzel.
     public void wurzel() {
+        // if (fehlerZustand) return;
         if (aktuellerWert.compareTo(BigDecimal.ZERO) < 0) {
             fehlerBehandlung("Fehler! Negative Wurzel!");
             return;
         }
         aktuellerWert = BigDecimal.valueOf(Math.sqrt(aktuellerWert.doubleValue()));
+        // neueEingabe = true;
     }
+
+    // Trigonometrische Funktionen.
+
+    // Berechnung der Sinusfunktion.
+    public void sinus() {
+        if (fehlerZustand) return;
+        double wert = aktuellerWert.doubleValue();
+        if (winkelModus) {
+            wert = Math.toRadians(wert);
+        }
+        double result = Math.sin(wert);
+        aktuellerWert = BigDecimal.valueOf(result).setScale(10, RoundingMode.HALF_UP).stripTrailingZeros();
+        neueEingabe = true;
+    }
+
+    // Berechnung der Cosinusfunktion.
+    public void cosinus(){
+        if (fehlerZustand) return;
+        double wert = aktuellerWert.doubleValue();
+        if (winkelModus) {
+            wert = Math.toRadians(wert);
+        }
+        double result = Math.cos(wert);
+        aktuellerWert = BigDecimal.valueOf(result).setScale(10, RoundingMode.HALF_UP).stripTrailingZeros();
+        neueEingabe = true;
+    }
+
+    // Berechnung der Tangensfunktion.
+    public void tangens(){
+        if (fehlerZustand) return;
+        double wert = aktuellerWert.doubleValue();
+        if (winkelModus) {
+            wert = Math.toRadians(wert);
+        }
+        double result = Math.tan(wert);
+        if (Double.isInfinite(result)) {
+            fehlerBehandlung("Fehler! Tangens undefiniert!");
+            return;}
+        aktuellerWert = BigDecimal.valueOf(result).setScale(10, RoundingMode.HALF_UP).stripTrailingZeros();
+        neueEingabe = true;
+    }
+
+
+    // Inverse Trigonometrische Funktionen.
+
+    // Berechnung der Arcsinusfunktion.
+    public void arcSinus(){
+        if (fehlerZustand) return;
+        double wert = aktuellerWert.doubleValue();
+        if (wert > 1 || wert < -1) {
+            fehlerBehandlung("Fehler! Arcsinus undefiniert!");
+            return;
+        }
+        double result = Math.asin(wert);
+        if (winkelModus) {
+            result = Math.toDegrees(result);
+        }
+        aktuellerWert = BigDecimal.valueOf(result).setScale(10, RoundingMode.HALF_UP).stripTrailingZeros();
+        neueEingabe = true;
+    }
+
+    // Berechnung der Arccosinusfunktion.
+    public void arcCosinus(){
+        if (fehlerZustand) return;
+        double wert = aktuellerWert.doubleValue();
+        if (wert > 1 || wert < -1) {
+            fehlerBehandlung("Fehler! Arccosinus undefiniert!");
+            return;
+        }
+        double result = Math.acos(wert);
+        if (winkelModus) {
+            result = Math.toRadians(result);
+        }
+        aktuellerWert = BigDecimal.valueOf(result).setScale(10, RoundingMode.HALF_UP).stripTrailingZeros();
+        neueEingabe = true;
+    }
+
+    // Berechnung der Arctangensfunktion.
+    public void arcTangens(){
+        if (fehlerZustand) return;
+        double wert = aktuellerWert.doubleValue();
+        double result = Math.atan(wert);
+        if (winkelModus) {
+            wert = Math.toRadians(result);
+        }
+        aktuellerWert = BigDecimal.valueOf(result).setScale(10, RoundingMode.HALF_UP).stripTrailingZeros();
+        neueEingabe = true;
+    }
+
+    // Berechnung der Logarithmusfunktion.
+    public void logarithmus10(){
+        if (fehlerZustand) return;
+        if (aktuellerWert.compareTo(BigDecimal.ZERO) <= 0) {
+            fehlerBehandlung("Fehler! Logarithmus undefiniert!");
+            return;
+        }
+        double wert = aktuellerWert.doubleValue();
+        double result = Math.log10(wert);
+        aktuellerWert = BigDecimal.valueOf(result);
+        neueEingabe = true;
+    }
+
+    public void logarithmusNatural(){
+        if (fehlerZustand) return;
+        if (aktuellerWert.compareTo(BigDecimal.ZERO) <= 0) {
+            fehlerBehandlung("Fehler! Logarithmus undefiniert!");
+            return;
+        }
+        double wert = aktuellerWert.doubleValue();
+        double result = Math.log(wert);
+        aktuellerWert = BigDecimal.valueOf(result);
+        neueEingabe = true;
+    }
+
+    // Exponentialfunktionen
+    public void exponentialE(){
+        if (fehlerZustand) return;
+        try {
+            double wert = aktuellerWert.doubleValue();
+            double result = Math.exp(wert);
+            aktuellerWert = BigDecimal.valueOf(result);
+            neueEingabe = true;
+        } catch (ArithmeticException e) {
+            fehlerBehandlung("Fehler! Exponential undefiniert!");
+        }
+    }
+
+    public void exponential10(){
+        if (fehlerZustand) return;
+        try {
+            double wert = aktuellerWert.doubleValue();
+            double result = Math.pow(10, wert);
+            aktuellerWert = BigDecimal.valueOf(result);
+            neueEingabe = true;
+        } catch (ArithmeticException e) {
+            fehlerBehandlung("Fehler! Exponential undefiniert!");
+        }
+    }
+
+    // Kehrwert
+    public void kehrwert(){
+        if (fehlerZustand) return;
+        if (aktuellerWert.compareTo(BigDecimal.ZERO) == 0) {
+            fehlerBehandlung("Fehler! Kehrwert undefiniert!");
+            return;
+        }
+        double wert = aktuellerWert.doubleValue();
+        double result = 1 / wert;
+        aktuellerWert = BigDecimal.valueOf(result);
+        neueEingabe = true;
+    }
+
+    // Quadrat
+    public void quadrat(){
+        if (fehlerZustand) return;
+        double wert = aktuellerWert.doubleValue();
+        double result = Math.pow(wert, 2);
+        aktuellerWert = BigDecimal.valueOf(result);
+        neueEingabe = true;
+    }
+
+    // Fakultäten
+    public void faktorial(){
+        if (fehlerZustand) return;
+        int n = aktuellerWert.intValue();
+        if (n < 0 || aktuellerWert.compareTo(BigDecimal.valueOf(n)) != 0) {
+            fehlerBehandlung("Fehler! Faktorial undefiniert!");
+            return;
+        }
+
+        if (n > 20) {
+            fehlerBehandlung("Fehler! Zahl zu groß für Fakultät!");
+            return;
+        }
+        long faktorial = 1;
+        for (int i = 1; i <= n; i++) {
+            faktorial *= i;
+        }
+        aktuellerWert = BigDecimal.valueOf(faktorial);
+        neueEingabe = true;
+    }
+
+    // Absolutwert
+    public void absoluterWert(){
+        if (fehlerZustand) return;
+        aktuellerWert = aktuellerWert.abs();
+        neueEingabe = true;
+    }
+
+    // Pi
+    public void setPi(){
+        if (fehlerZustand) return;
+        aktuellerWert = PI;
+        neueEingabe = true;
+    }
+
+    // Eulerische Zahl
+    public void setE(){
+        if (fehlerZustand) return;
+        aktuellerWert = E;
+        neueEingabe = true;
+    }
+
+    // Winkelmodus umschalten
+    public void setWinkelModusUmschalten(){
+        winkelModus = !winkelModus;
+    }
+
+    public boolean istGradModus(){
+        return winkelModus;
+    }
+
+    public String getWinkelModus(){
+        return winkelModus ? "DEG" : "RAD";
+    }
+
+    // Ans-Funktion
+    public void antwortAbrufen(){
+        if (fehlerZustand) return;
+        aktuellerWert = letzteAntwort;
+        neueEingabe = true;
+    }
+
+    /*
+     * Speicherfunktionen
+     */
 
     // Speichert den aktuellen Wert in den Speicher.
     public void memorySpeichern() {
@@ -152,6 +441,15 @@ public class TaschenrechnerLogik {
     public void memoryAbrufen() {
         if (fehlerZustand) return;
         aktuellerWert = memory;
+        neueEingabe = true;
+    }
+
+    public String getMemoryStatus() {
+        return memory.compareTo(BigDecimal.ZERO) != 0 ? "M" : "";
+    }
+
+    public void memoryClearAll() {
+        memory = BigDecimal.ZERO;
     }
 
     // Beendet eine Berechnung und wendet den Operator erneut an.
@@ -164,6 +462,9 @@ public class TaschenrechnerLogik {
 
         aktuellerWert = letzterOperand;
         berechnen();
+        vorherigerWert = aktuellerWert;
+
+        letzteAntwort = aktuellerWert;
         vorherigerWert = aktuellerWert;
 
         neueEingabe = true;
@@ -179,12 +480,18 @@ public class TaschenrechnerLogik {
         kommaGesetzt = false;
         fehlerZustand = false;
         letzterOperand = BigDecimal.ZERO;
+
+        // Klammer-Stacks leeren
+        werteStack.clear();
+        operatorStack.clear();
+        klammerEbene = 0;
     }
 
     // Löscht nur die aktuelle Eingabe.
     public void clearEntry() {
         aktuellerWert = BigDecimal.ZERO;
         neueEingabe = true;
+        kommaGesetzt = false;
     }
 
     // Gibt den aktuellen Wert oder die Fehlermeldung zurück.

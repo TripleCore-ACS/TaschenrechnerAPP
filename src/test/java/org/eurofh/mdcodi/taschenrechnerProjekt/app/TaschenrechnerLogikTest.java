@@ -4,16 +4,114 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TaschenrechnerLogikTest {
 
     private TaschenrechnerLogik logik;
+    // private static final double DELTA = 0.0001;
 
     @BeforeEach
     void setUp() {
         logik = new TaschenrechnerLogik();
         System.out.println("Test setup: Neue Taschenrechner-Instanz erstellt.");
+    }
+
+    @Test
+    void testSinus() {
+        logik.zifferEingeben(3);
+        logik.zifferEingeben(0);
+        //logik.setWinkelModusUmschalten();
+        logik.sinus();
+        String erwartet = "0.5";
+        String erhalten = logik.getAktuellerWert();
+        assert erwartet.equals(erhalten);
+    }
+
+    @Test
+    void testCosinus() {
+        logik.zifferEingeben(6);
+        logik.zifferEingeben(0);
+        logik.cosinus();
+        String erwartet = "0.5";
+        String erhalten = logik.getAktuellerWert();
+        assert erwartet.equals(erhalten);
+    }
+
+    @Test
+    void testTangens() {
+        logik.zifferEingeben(4);
+        logik.zifferEingeben(5);
+        logik.tangens();
+        String erwartet = "1";
+        String erhalten = logik.getAktuellerWert();
+        assert erwartet.equals(erhalten);
+    }
+
+    @Test
+    void testLogarithmus10() {
+        logik.zifferEingeben(1);
+        logik.zifferEingeben(0);
+        logik.zifferEingeben(0);
+        logik.logarithmus10();
+        String erwartet = "2";
+        String erhalten = logik.getAktuellerWert();
+        assert erwartet.equals(erhalten);
+    }
+
+    @Test
+    void testLogarithmusNaturalis() {
+        logik.setE();
+        logik.logarithmusNatural();
+        String erwartet = "1";
+        String erhalten = logik.getAktuellerWert();
+        assert erwartet.equals(erhalten);
+    }
+
+    @Test
+    void testExponentialE() {
+        logik.zifferEingeben(1);
+        logik.exponentialE();
+        double erwartet = Math.E;
+        double erhalten = Double.parseDouble(logik.getAktuellerWert());
+        assertEquals(erwartet, erhalten, 0.000001, "e^1 sollte ungefähr e sein");
+    }
+
+    @Test
+    void testQuadrat() {
+        logik.zifferEingeben(2);
+        logik.quadrat();
+        String erwartet = "4";
+        String erhalten = logik.getAktuellerWert();
+        assert erwartet.equals(erhalten);
+    }
+
+    @Test
+    void testKehrwert() {
+        logik.zifferEingeben(4);
+        logik.kehrwert();
+        String erwartet = "0.25";
+        String erhalten = logik.getAktuellerWert();
+        assert erwartet.equals(erhalten);
+    }
+
+    @Test
+    void testFakultaet() {
+        logik.zifferEingeben(5);
+        logik.faktorial();
+        String erwartet = "120";
+        String erhalten = logik.getAktuellerWert();
+        assert erwartet.equals(erhalten);
+    }
+
+    @Test
+    void testAbsolutwert() {
+        logik.zifferEingeben(5);
+        logik.vorzeichenWechseln();
+        logik.absoluterWert();
+        String erwartet = "5";
+        String erhalten = logik.getAktuellerWert();
+        assert erwartet.equals(erhalten);
     }
 
     @Test
@@ -25,6 +123,69 @@ public class TaschenrechnerLogikTest {
         String erwartet = "-1";
         String erhalten = logik.getAktuellerWert();
         assert erwartet.equals(erhalten);
+    }
+
+    @Test
+    void testPi() {
+        logik.setPi();
+        double ergebnis = Double.parseDouble(logik.getAktuellerWert());
+        assertEquals(Math.PI, ergebnis, 0.000001);
+    }
+
+    @Test
+    void testE() {
+        logik.setE();
+        double ergebnis = Double.parseDouble(logik.getAktuellerWert());
+        assertEquals(Math.E, ergebnis, 0.000001);
+    }
+
+    @Test
+    void testWinkelModus() {
+        // Teste direkt den boolean-Wert
+        assertTrue(logik.istGradModus(), "Initial sollte Gradmodus (DEG) aktiv sein");
+        assertEquals("DEG", logik.getWinkelModus(), "Initial sollte DEG angezeigt werden");
+
+        logik.setWinkelModusUmschalten();
+        assertFalse(logik.istGradModus(), "Nach Umschalten sollte Radiant-Modus aktiv sein");
+        assertEquals("RAD", logik.getWinkelModus(), "Nach Umschalten sollte RAD angezeigt werden");
+
+        logik.setWinkelModusUmschalten();
+        assertTrue(logik.istGradModus(), "Nach erneutem Umschalten sollte Gradmodus wieder aktiv sein");
+        assertEquals("DEG", logik.getWinkelModus(), "Nach erneutem Umschalten sollte DEG wieder angezeigt werden");
+    }
+
+    @Test
+    void testAntwortFunktion() {
+        logik.zifferEingeben(5);
+        logik.operatorEingeben("+");
+        logik.zifferEingeben(3);
+        logik.gleichzeichen();
+        logik.allClear();
+        logik.antwortAbrufen();
+        String erwartet = "8";
+        String erhalten = logik.getAktuellerWert();
+        assert erwartet.equals(erhalten);
+    }
+
+    @Test
+    void testFehlerBehandlungLogarithmus() {
+        // log(0) sollte Fehler auslösen
+        logik.zifferEingeben(0);
+        logik.logarithmus10();
+
+        assertTrue(logik.istFehlerZustand(), "log(0) sollte Fehler auslösen");
+        assertEquals("Fehler! Logarithmus undefiniert!", logik.getAktuellerWert());
+    }
+
+    @Test
+    void testFehlerBehandlungFakultaet() {
+        // 25! sollte Fehler auslösen (zu groß)
+        logik.zifferEingeben(2);
+        logik.zifferEingeben(5);
+        logik.faktorial();
+
+        assertTrue(logik.istFehlerZustand(), "25! sollte Fehler auslösen");
+        assertEquals("Fehler! Zahl zu groß für Fakultät!", logik.getAktuellerWert());
     }
 
     @Test

@@ -1,3 +1,4 @@
+
 gradle.properties
 .gradle
 build/
@@ -41,3 +42,14 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+# Additional IDE files
+.idea/codeStyles/
+.idea/inspectionProfiles/
+.idea/shelf/
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp
