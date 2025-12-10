@@ -33,10 +33,14 @@ public class TaschenrechnerGUITest {
     @BeforeEach
     void setUp() {
         mocklogik = Mockito.mock(TaschenrechnerLogik.class);
-        gui = new TaschenrechnerGUI(mocklogik);
 
-        // Verhalten für getAktuellerWert() konfigurieren
+        // Verhalten für alle Methoden konfigurieren, die während der Initialisierung aufgerufen werden
         Mockito.when(mocklogik.getAktuellerWert()).thenReturn("0");
+        Mockito.when(mocklogik.getWinkelModus()).thenReturn("DEG");
+        Mockito.when(mocklogik.getMemoryStatus()).thenReturn("");
+        Mockito.when(mocklogik.istFehlerZustand()).thenReturn(false);
+
+        gui = new TaschenrechnerGUI(mocklogik);
     }
 
     @Test
